@@ -1,0 +1,59 @@
+using System;
+using System.Collections.Generic;
+
+public class FunctionCache<TKey, TResult>
+{
+    private Dictionary<TKey, TResult> cache = new Dictionary<TKey, TResult>();
+    private Dictionary<TKey, DateTime> expirationTimes = new Dictionary<TKey, DateTime>();
+    private TimeSpan defaultExpiration = TimeSpan.FromMinutes(10);
+
+    public delegate TResult FuncDelegate(TKey key);
+
+    public TResult GetOrAdd(TKey key, FuncDelegate func, TimeSpan? expiration = null)
+    {
+        if (cache.ContainsKey(key) && !IsExpired(key))
+        {
+            Console.WriteLine($"Result retrieved from cache for key: {key}");
+            return cache[key];
+        }
+
+        Console.WriteLine($"Executing function for key: {key}");
+        TResult result = func(key);
+        cache[key] = result;
+
+        expirationTimes[key] = DateTime.Now.Add(expiration ?? defaultExpiration);
+
+        return result;
+    }
+
+    private bool IsExpired(TKey key)
+    {
+        return expirationTimes.ContainsKey(key) && DateTime.Now > expirationTimes[key];
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        FunctionCache<string, int> cache = new FunctionCache<string, int>();
+
+        Func<string, int> expensiveFunction = key =>
+        {
+            Console.WriteLine($"Performing expensive calculation for key: {key}");
+            return key.Length * 10;
+        };
+
+        string key1 = "abc";
+        string key2 = "xyz";
+
+        int result1 = cache.GetOrAdd(key1, expensiveFunction, TimeSpan.FromMinutes(5));
+        Console.WriteLine($"Result for {key1}: {result1}");
+
+        int result2 = cache.GetOrAdd(key1, expensiveFunction); // Should retrieve from cache
+        Console.WriteLine($"Result for {key1}: {result2}");
+
+        int result3 = cache.GetOrAdd(key2, expensiveFunction); // Should perform calculation
+        Console.WriteLine($"Result for {key2}: {result3}");
+    }
+}
