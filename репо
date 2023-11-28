@@ -1,0 +1,57 @@
+using System;
+using System.Collections.Generic;
+
+public class Repository<T>
+{
+    private List<T> items = new List<T>();
+
+    public delegate bool Criteria<T>(T item);
+
+    public void Add(T item)
+    {
+        items.Add(item);
+    }
+
+    public List<T> Find(Criteria<T> criteria)
+    {
+        List<T> result = new List<T>();
+        foreach (var item in items)
+        {
+            if (criteria(item))
+            {
+                result.Add(item);
+            }
+        }
+        return result;
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Repository<int> intRepository = new Repository<int>();
+        intRepository.Add(5);
+        intRepository.Add(10);
+        intRepository.Add(15);
+
+        Repository<string> stringRepository = new Repository<string>();
+        stringRepository.Add("apple");
+        stringRepository.Add("banana");
+        stringRepository.Add("orange");
+
+        Console.WriteLine("Integers greater than 8:");
+        var intResult = intRepository.Find(x => x > 8);
+        foreach (var item in intResult)
+        {
+            Console.WriteLine(item);
+        }
+
+        Console.WriteLine("Strings containing 'a':");
+        var stringResult = stringRepository.Find(s => s.Contains("a"));
+        foreach (var item in stringResult)
+        {
+            Console.WriteLine(item);
+        }
+    }
+}
